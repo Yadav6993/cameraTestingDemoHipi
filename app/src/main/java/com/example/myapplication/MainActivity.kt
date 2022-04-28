@@ -1,6 +1,8 @@
 package com.example.myapplication
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
@@ -8,6 +10,7 @@ import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         imageView = findViewById(R.id.imageView)
 
         captureBtn?.setOnClickListener {
-            dispatchTakePictureIntent()
+            requestPermissions()
         }
     }
 
@@ -31,12 +34,33 @@ class MainActivity : AppCompatActivity() {
         resultLauncher.launch(takePictureIntent)
     }
 
-    var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val data = result.data
-            val imageBitmap = data?.extras?.get("data") as Bitmap
-            imageView?.setImageBitmap(imageBitmap)
+    var resultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val data = result.data
+                val imageBitmap = data?.extras?.get("data") as Bitmap
+                imageView?.setImageBitmap(imageBitmap)
+            }
         }
+
+    fun requestPermissions() {
+        when {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                dispatchTakePictureIntent()
+            }
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
+
+    val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        requestPermissions()
     }
 
 }
